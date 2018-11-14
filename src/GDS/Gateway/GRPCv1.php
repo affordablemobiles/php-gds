@@ -138,7 +138,7 @@ class GRPCv1 extends \GDS\Gateway
             $obj_kpe->setKind($this->obj_schema->getKind());
             $obj_kpe->$str_setter($mix_key_part);
 
-            $obj_key->setPath($obj_kpe);
+            $obj_key->setPath([$obj_kpe]);
 
             $keys[] = $obj_key;
         }
@@ -204,16 +204,7 @@ class GRPCv1 extends \GDS\Gateway
         $mutations = [];
 
         foreach($arr_entities as $obj_gds_entity) {
-            $obj_key = new Key();
-            $obj_key->setPartitionId($partitionId);
-
-            $obj_kpe = new KeyPathElement();
-            $obj_kpe->setKind($this->obj_schema->getKind());
-
-            $obj_mapper->configureGoogleKey($obj_kpe, $obj_gds_entity);
-
-            $obj_key->setPath($obj_kpe);
-
+            $obj_key = $obj_mapper->createGoogleKey($obj_gds_entity);
             $mutations[] = new Mutation()->setDelete($obj_key);
         }
 
@@ -357,16 +348,7 @@ class GRPCv1 extends \GDS\Gateway
     protected function configureObjectValueParamForQuery($mix_value)
     {
         if($mix_value instanceof Entity) {
-            $obj_key = new Key();
-            $obj_key->setPartitionId($this->getPartitionId());
-
-            $obj_kpe = new KeyPathElement();
-            $obj_kpe->setKind($this->obj_schema->getKind());
-
-            $obj_mapper->configureGoogleKey($obj_kpe, $mix_value);
-
-            $obj_key->setPath($obj_kpe);
-
+            $obj_key = $this->createMapper()->createGoogleKey($mix_value);
             return new Value()->setKeyValue($obj_key);
         } elseif ($mix_value instanceof \DateTimeInterface) {
             $timestamp = new Timestamp()->setSeconds($mix_value->getTimestamp())->setNanos(1000 * $mix_value->format('u'));
@@ -393,6 +375,6 @@ class GRPCv1 extends \GDS\Gateway
      */
     protected function createMapper()
     {
-        return (new \GDS\Mapper\GRPCv1())->setSchema($this->obj_schema);
+        return (new \GDS\Mapper\GRPCv1())->setSchema($this->obj_schema)->setPartitionId($this->getPartitionId());
     }
 }
