@@ -21,6 +21,7 @@ use GDS\Entity;
 use GDS\Property\Geopoint;
 use GDS\Schema;
 use Google\Cloud\Datastore\V1\Entity as GRPC_Entity;
+use Google\Cloud\Datastore\V1\EntityResult as GRPC_EntityResult;
 
 /**
  * gRPC v1 Mapper
@@ -73,16 +74,15 @@ class ProtoBuf extends \GDS\Mapper
      * @param EntityResult $obj_result
      * @return Entity
      */
-    public function mapOneFromResult($obj_result)
+    public function mapOneFromResult(GRPC_EntityResult $obj_result)
     {
         // Key & Ancestry
         list($obj_gds_entity, $bol_schema_match) = $this->createEntityWithKey($obj_result);
 
         // Properties
         $arr_property_definitions = $this->obj_schema->getProperties();
-        foreach($obj_result->getEntity()->getPropertyList() as $obj_property) {
-            /* @var $obj_property \google\appengine\datastore\v4\Property */
-            $str_field = $obj_property->getName();
+        foreach($obj_result->getEntity()->getProperties() as $str_field => $obj_property) {
+            /* string => Google\Cloud\Datastore\V1\Value */
             if ($bol_schema_match && isset($arr_property_definitions[$str_field])) {
                 $obj_gds_entity->__set($str_field, $this->extractPropertyValue($arr_property_definitions[$str_field]['type'], $obj_property->getValue()));
             } else {
@@ -100,10 +100,10 @@ class ProtoBuf extends \GDS\Mapper
      * @param EntityResult $obj_result
      * @return array
      */
-    private function createEntityWithKey(EntityResult $obj_result)
+    private function createEntityWithKey(GRPC_EntityResult $obj_result)
     {
         // Get the full key path
-        $arr_key_path = $obj_result->getEntity()->getKey()->getPathElementList();
+        $arr_key_path = $obj_result->getEntity()->getKey()->getPath();
 
         // Key for 'self' (the last part of the KEY PATH)
         /* @var $obj_path_end \google\appengine\datastore\v4\Key\PathElement */
@@ -117,7 +117,7 @@ class ProtoBuf extends \GDS\Mapper
         }
 
         // Set ID or Name (will always have one or the other)
-        if($obj_path_end->hasId()) {
+        if($obj_path_end->getIdType() == 'id') {
             $obj_gds_entity->setKeyId($obj_path_end->getId());
         } else {
             $obj_gds_entity->setKeyName($obj_path_end->getName());
@@ -129,9 +129,9 @@ class ProtoBuf extends \GDS\Mapper
             $arr_anc_path = [];
             foreach ($arr_key_path as $obj_kpe) {
                 $arr_anc_path[] = [
-                    'kind' => $obj_kpe->getKind(),
-                    'id' => $obj_kpe->hasId() ? $obj_kpe->getId() : null,
-                    'name' => $obj_kpe->hasName() ? $obj_kpe->getName() : null
+                    'kind'  => $obj_kpe->getKind(),
+                    'id'    => ($obj_kpe->getIdType() == 'id') ? $obj_kpe->getId() : null,
+                    'name'  => ($obj_kpe->getIdType() == 'name') ? $obj_kpe->getName() : null
                 ];
             }
             $obj_gds_entity->setAncestry($arr_anc_path);
@@ -283,13 +283,7 @@ class ProtoBuf extends \GDS\Mapper
     protected function extractDatetimeValue($obj_property)
     {
         // Attempt to retain microsecond precision
-        return \DateTime::createFromFormat(
-            self::DATETIME_FORMAT_UDOTU,
-            sprintf('%0.6F', bcdiv($obj_property->getTimestampMicrosecondsValue(), self::MICROSECONDS))
-        );
-
-        // Works, to seconds only
-        // return (new \DateTime())->setTimestamp($obj_property->getTimestampMicrosecondsValue() / self::MICROSECONDS);
+        return $obj_property->getTimestampValue()->toDateTime();
     }
 
     /**
@@ -300,7 +294,7 @@ class ProtoBuf extends \GDS\Mapper
      */
     protected function extractStringListValue($obj_property)
     {
-        $arr_values = $obj_property->getListValueList();
+        $arr_values = $obj_property->getArrayValue();
         if(count($arr_values) > 0) {
             $arr = [];
             foreach ($arr_values as $obj_val) {
@@ -376,28 +370,32 @@ class ProtoBuf extends \GDS\Mapper
      */
     protected function extractAutoDetectValue($obj_property)
     {
-        if($obj_property->hasStringValue()) {
-            return $obj_property->getStringValue();
+        switch ( $obj_property->getValueType() ) {
+            case "string":
+                return $obj_property->getStringValue();
+                break;
+            case "integer":
+                return $obj_property->getIntegerValue();
+                break;
+            case "timestamp":
+                return $this->extractDatetimeValue($obj_property);
+                break;
+            case "double":
+                return $obj_property->getDoubleValue();
+                break;
+            case "boolean":
+                return $obj_property->getBooleanValue();
+                break;
+            case "geo_point":
+                return $this->extractGeopointValue($obj_property);
+                break;
+            case "array":
+                return $this->extractStringListValue($obj_property);
+                break;
+            default:
+                throw new \Exception('Unsupported field type: ' . $obj_property->getValueType());
+                break;
         }
-        if($obj_property->hasIntegerValue()) {
-            return $obj_property->getIntegerValue();
-        }
-        if($obj_property->hasTimestampMicrosecondsValue()) {
-            return $this->extractDatetimeValue($obj_property);
-        }
-        if($obj_property->hasDoubleValue()) {
-            return $obj_property->getDoubleValue();
-        }
-        if($obj_property->hasBooleanValue()) {
-            return $obj_property->getBooleanValue();
-        }
-        if($obj_property->hasGeoPointValue()) {
-            return $this->extractGeopointValue($obj_property);
-        }
-        if($obj_property->getListValueSize() > 0) {
-            return $this->extractStringListValue($obj_property);
-        }
-        // $this->extractPropertyValue($int_field_type, $obj_property); // Recursive detection call
         return null;
     }
 }
