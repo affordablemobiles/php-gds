@@ -39,6 +39,7 @@ class GRPCv1 extends \GDS\Mapper
     public function setPartitionId($var)
     {
         $this->partitionId = $var;
+        return $this;
     }
 
     /**
