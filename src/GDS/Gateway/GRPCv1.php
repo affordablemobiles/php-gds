@@ -86,7 +86,9 @@ class GRPCv1 extends \GDS\Gateway
     {
         $obj = new PartitionId();
         $obj->setProjectId($this->str_dataset_id);
-        $obj->setNamespaceId($this->str_namespace);
+        if ($this->str_namespace !== null) {
+            $obj->setNamespaceId($this->str_namespace);
+        }
         return $obj;
     }
 
