@@ -149,7 +149,7 @@ class GRPCv1 extends \GDS\Gateway
 
         $response = $this->execute('lookup', [$keys, ['readOptions' => $this->getReadOptions()]]);
 
-        $arr_mapped_results = $this->createMapper()->mapFromResults($response->getFound());
+        $arr_mapped_results = $this->createMapper()->mapFromResults((array)$response->getFound());
 
         $this->obj_schema = null; // Consume Schema
 
@@ -250,7 +250,7 @@ class GRPCv1 extends \GDS\Gateway
             ]
         ]);
 
-        $arr_mapped_results = $this->createMapper()->mapFromResults($obj_gql_response->getBatch()->getEntityResults());
+        $arr_mapped_results = $this->createMapper()->mapFromResults((array)$obj_gql_response->getBatch()->getEntityResults());
         $this->obj_schema = null; // Consume Schema
         return $arr_mapped_results;
     }
