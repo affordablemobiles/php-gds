@@ -331,7 +331,9 @@ class GRPCv1 extends \GDS\Gateway
                 if ('startCursor' == $str_name) {
                     $obj_arg->setCursor($mix_value);
                 } else {
-                    $obj_arg->setValue($this->configureValueParamForQuery($mix_value));
+                    $obj_val = new Value();
+                    $this->configureObjectValueParamForQuery($obj_val, $mix_value);
+                    $obj_arg->setValue($obj_val);
                 }
                 $namedArgs[$str_name] = $obj_arg;
             }
@@ -346,16 +348,16 @@ class GRPCv1 extends \GDS\Gateway
      *
      * @param object $mix_value
      */
-    protected function configureObjectValueParamForQuery($mix_value)
+    protected function configureObjectValueParamForQuery($obj_val, $mix_value)
     {
         if($mix_value instanceof Entity) {
             $obj_key = $this->createMapper()->createGoogleKey($mix_value);
-            return (new Value())->setKeyValue($obj_key);
+            $obj_val->setKeyValue($obj_key);
         } elseif ($mix_value instanceof \DateTimeInterface) {
             $timestamp = (new Timestamp())->setSeconds($mix_value->getTimestamp())->setNanos(1000 * $mix_value->format('u'));
-            return (new Value())->setTimestampValue($timestamp);
+            $obj_val->setTimestampValue($timestamp);
         } elseif (method_exists($mix_value, '__toString')) {
-            return (new Value())->setStringValue($mix_value->__toString());
+            $obj_val->setStringValue($mix_value->__toString());
         } else {
             throw new \InvalidArgumentException('Unexpected, non-string-able object parameter: ' . get_class($mix_value));
         }
