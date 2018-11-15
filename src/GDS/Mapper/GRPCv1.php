@@ -235,7 +235,7 @@ class GRPCv1 extends \GDS\Mapper
 
         // null checks
         if(null === $mix_value) {
-            return;
+            return $obj_val;
         }
 
         // Value
@@ -284,6 +284,8 @@ class GRPCv1 extends \GDS\Mapper
             default:
                 throw new \RuntimeException('Unable to process field type: ' . $arr_field_def['type']);
         }
+
+        return $obj_val;
     }
 
     /**
