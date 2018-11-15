@@ -170,7 +170,7 @@ class GRPCv1 extends \GDS\Gateway
                 $arr_auto_id_required[] = $obj_gds_entity; // maintain reference to the array of requested auto-ids
             }
             $obj_entity = new GRPC_Entity();
-            $this->determineMapper($obj_gds_entity)->mapToGoogle($obj_gds_entity, $obj_entity, $this->getPartitionId());
+            $this->determineMapper($obj_gds_entity)->mapToGoogle($obj_gds_entity, $obj_entity);
             $mutations[] = new Mutation()->setUpsert($obj_entity);
         }
 

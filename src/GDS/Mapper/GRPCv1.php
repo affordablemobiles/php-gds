@@ -20,6 +20,7 @@ namespace GDS\Mapper;
 use GDS\Entity;
 use GDS\Property\Geopoint;
 use GDS\Schema;
+use Google\Type\LatLng;
 use Google\Cloud\Datastore\V1\Entity as GRPC_Entity;
 use Google\Cloud\Datastore\V1\EntityResult as GRPC_EntityResult;
 
@@ -30,7 +31,7 @@ use Google\Cloud\Datastore\V1\EntityResult as GRPC_EntityResult;
  * @author Samuel Melrose <sam@infitialis.com>
  * @author Tom Walder <twalder@gmail.com>
  */
-class ProtoBuf extends \GDS\Mapper
+class GRPCv1 extends \GDS\Mapper
 {
 
     private $partitionId;
@@ -49,21 +50,21 @@ class ProtoBuf extends \GDS\Mapper
     public function mapToGoogle(Entity $obj_gds_entity, GRPC_Entity $obj_entity)
     {
         // Key
-        $this->configureGoogleKey($obj_entity->mutableKey(), $obj_gds_entity);
+        $obj_entity->setKey($this->createGoogleKey($obj_gds_entity));
 
         // Properties
+        $props = [];
         $arr_field_defs = $this->obj_schema->getProperties();
         foreach($obj_gds_entity->getData() as $str_field_name => $mix_value) {
-            $obj_prop = $obj_entity->addProperty();
-            $obj_prop->setName($str_field_name);
-            $obj_val = $obj_prop->mutableValue();
             if(isset($arr_field_defs[$str_field_name])) {
-                $this->configureGooglePropertyValue($obj_val, $arr_field_defs[$str_field_name], $mix_value);
+                $props[$str_field_name] = $this->configureGooglePropertyValue($arr_field_defs[$str_field_name], $mix_value);
             } else {
                 $arr_dynamic_data = $this->determineDynamicType($mix_value);
-                $this->configureGooglePropertyValue($obj_val, ['type' => $arr_dynamic_data['type'], 'index' => TRUE], $arr_dynamic_data['value']);
+                $props[$str_field_name] = $this->configureGooglePropertyValue(['type' => $arr_dynamic_data['type'], 'index' => TRUE], $arr_dynamic_data['value']);
             }
         }
+
+        $obj_entity->setProperties($props);
     }
 
     /**
@@ -216,14 +217,15 @@ class ProtoBuf extends \GDS\Mapper
      * @param array $arr_field_def
      * @param $mix_value
      */
-    private function configureGooglePropertyValue(Value $obj_val, array $arr_field_def, $mix_value)
+    private function configureGooglePropertyValue(array $arr_field_def, $mix_value)
     {
+        $obj_val = new Value();
         // Indexed?
         $bol_index = TRUE;
         if(isset($arr_field_def['index']) && FALSE === $arr_field_def['index']) {
             $bol_index = FALSE;
         }
-        $obj_val->setIndexed($bol_index);
+        $obj_val->setExcludeFromIndexes(!$bol_index);
 
         // null checks
         if(null === $mix_value) {
@@ -246,12 +248,13 @@ class ProtoBuf extends \GDS\Mapper
                 } else {
                     $obj_dtm = new \DateTimeImmutable($mix_value);
                 }
-                $obj_val->setTimestampMicrosecondsValue($obj_dtm->format(self::DATETIME_FORMAT_UU));
+                $timestamp = new Timestamp()->setSeconds($obj_dtm->getTimestamp())->setNanos(1000 * $obj_dtm->format('u'));
+                $obj_val->setTimestampValue($timestamp);
                 break;
 
             case Schema::PROPERTY_DOUBLE:
             case Schema::PROPERTY_FLOAT:
-            $obj_val->setDoubleValue(floatval($mix_value));
+                $obj_val->setDoubleValue(floatval($mix_value));
                 break;
 
             case Schema::PROPERTY_BOOLEAN:
@@ -259,14 +262,17 @@ class ProtoBuf extends \GDS\Mapper
                 break;
 
             case Schema::PROPERTY_GEOPOINT:
-                $obj_val->mutableGeoPointValue()->setLatitude($mix_value[0])->setLongitude($mix_value[1]);
+                $geo = new LatLng()->setLatitude($mix_value[0])->setLongitude($mix_value[1]);
+                $obj_val->setGeoPointValue($geo);
                 break;
 
             case Schema::PROPERTY_STRING_LIST:
-                $obj_val->clearIndexed(); // Ensure we only index the values, not the list
+                $obj_val->setExcludeFromIndexes(false); // Ensure we only index the values, not the list
+                $vals = [];
                 foreach ((array)$mix_value as $str) {
-                    $obj_val->addListValue()->setStringValue($str)->setIndexed($bol_index);
+                    $vals[] = new Value()->setStringValue($str)->setExcludeFromIndexes(!$bol_index);
                 }
+                $obj_val->setArrayValue($vals);
                 break;
 
             default:
