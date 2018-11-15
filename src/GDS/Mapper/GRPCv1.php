@@ -22,6 +22,7 @@ use GDS\Property\Geopoint;
 use GDS\Schema;
 use Google\Type\LatLng;
 use Google\Protobuf\Timestamp;
+use Google\Protobuf\Internal\RepeatedField;
 use Google\Cloud\Datastore\V1\Key;
 use Google\Cloud\Datastore\V1\Key\PathElement as KeyPathElement;
 use Google\Cloud\Datastore\V1\Entity as GRPC_Entity;
@@ -98,6 +99,15 @@ class GRPCv1 extends \GDS\Mapper
         return $obj_gds_entity;
     }
 
+    public function convertRepeatedField(RepeatedField $rep)
+    {
+        $arr = [];
+        foreach ($rep as $v) {
+            $arr[] = $v;
+        }
+        return $arr;
+    }
+
     /**
      * Create & populate a GDS\Entity with key data
      *
@@ -109,7 +119,7 @@ class GRPCv1 extends \GDS\Mapper
     private function createEntityWithKey(GRPC_EntityResult $obj_result)
     {
         // Get the full key path
-        $arr_key_path = $obj_result->getEntity()->getKey()->getPath();
+        $arr_key_path = $this->convertRepeatedField($obj_result->getEntity()->getKey()->getPath());
 
         // Key for 'self' (the last part of the KEY PATH)
         /* @var $obj_path_end \google\appengine\datastore\v4\Key\PathElement */
