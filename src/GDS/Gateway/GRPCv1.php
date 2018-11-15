@@ -23,6 +23,7 @@ use GDS\Mapper;
 use GDS\Mapper\ProtoBufGQLParser;
 use Google\ApiCore\ApiException;
 use Google\Protobuf\Timestamp;
+use Google\Protobuf\Internal\RepeatedField;
 use Google\Cloud\Datastore\V1\DatastoreClient;
 use Google\Cloud\Datastore\V1\Entity as GRPC_Entity;
 use Google\Cloud\Datastore\V1\Key;
@@ -122,6 +123,15 @@ class GRPCv1 extends \GDS\Gateway
         return $this->obj_last_response;
     }
 
+    public function convertRepeatedField(RepeatedField $rep)
+    {
+        $arr = [];
+        foreach ($rep as $v) {
+            $arr[] = $v;
+        }
+        return $arr;
+    }
+
     /**
      * Fetch 1-many Entities, using the Key parts provided
      *
@@ -150,8 +160,7 @@ class GRPCv1 extends \GDS\Gateway
         $response = $this->execute('lookup', [$keys, ['readOptions' => $this->getReadOptions()]]);
 
         $results = $response->getFound();
-        error_log("GDS: Got " . count($results) . " results at lookup.");
-        $arr_mapped_results = $this->createMapper()->mapFromResults($results);
+        $arr_mapped_results = $this->createMapper()->mapFromResults($this->convertRepeatedField($results));
 
         $this->obj_schema = null; // Consume Schema
 
@@ -252,7 +261,8 @@ class GRPCv1 extends \GDS\Gateway
             ]
         ]);
 
-        $arr_mapped_results = $this->createMapper()->mapFromResults($obj_gql_response->getBatch()->getEntityResults());
+        $results = $obj_gql_response->getBatch()->getEntityResults();
+        $arr_mapped_results = $this->createMapper()->mapFromResults($this->convertRepeatedField($results));
         $this->obj_schema = null; // Consume Schema
         return $arr_mapped_results;
     }
