@@ -296,7 +296,7 @@ class GRPCv1 extends \GDS\Gateway
      */
     private function getTransaction()
     {
-        $obj = $this->str_next_transaction
+        $obj = $this->str_next_transaction;
         $this->str_next_transaction = null;
         return $obj;
     }
