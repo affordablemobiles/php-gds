@@ -75,7 +75,7 @@ class GRPCv1 extends \GDS\Mapper
      * @param EntityResult $obj_result
      * @return Entity
      */
-    public function mapOneFromResult(GRPC_EntityResult $obj_result)
+    public function mapOneFromResult($obj_result)
     {
         // Key & Ancestry
         list($obj_gds_entity, $bol_schema_match) = $this->createEntityWithKey($obj_result);
