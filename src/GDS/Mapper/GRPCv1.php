@@ -188,7 +188,8 @@ class GRPCv1 extends \GDS\Mapper
             'id'    => $obj_gds_entity->getKeyId(),
             'name'  => $obj_gds_entity->getKeyName()
         ];
-        return array_unshift($arr, $this->createGoogleKeyPathElement($data));
+        array_unshift($arr, $this->createGoogleKeyPathElement($data));
+        return $arr;
     }
 
     /**

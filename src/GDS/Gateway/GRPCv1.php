@@ -107,7 +107,8 @@ class GRPCv1 extends \GDS\Gateway
         try {
             // Call gRPC client,
             //   prepend projectId as first parameter automatically.
-            $this->obj_last_response = call_user_func_array([$this->grpc_client, $str_method], array_unshift($args, $this->str_dataset_id));
+            array_unshift($args, $this->str_dataset_id);
+            $this->obj_last_response = call_user_func_array([$this->grpc_client, $str_method], $args);
         } catch (ApiException $obj_exception) {
             $this->obj_last_response = null;
             if (FALSE !== strpos($obj_exception->getMessage(), 'too much contention') || FALSE !== strpos($obj_exception->getMessage(), 'Concurrency')) {
