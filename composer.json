@@ -14,7 +14,7 @@
     "require": {
         "php": ">=5.5.0",
         "ext-bcmath" : "*",
-        "google/cloud-datastore": "dev-master"
+        "google/datastore": "dev-master"
     },
     "require-dev": {
         "google/auth": "v1.0.*",
