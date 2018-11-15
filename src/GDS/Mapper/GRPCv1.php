@@ -21,8 +21,12 @@ use GDS\Entity;
 use GDS\Property\Geopoint;
 use GDS\Schema;
 use Google\Type\LatLng;
+use Google\Protobuf\Timestamp;
+use Google\Cloud\Datastore\V1\Key;
+use Google\Cloud\Datastore\V1\Key\PathElement as KeyPathElement;
 use Google\Cloud\Datastore\V1\Entity as GRPC_Entity;
 use Google\Cloud\Datastore\V1\EntityResult as GRPC_EntityResult;
+use Google\Cloud\Datastore\V1\Value;
 
 /**
  * gRPC v1 Mapper
