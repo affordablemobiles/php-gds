@@ -120,7 +120,7 @@ abstract class Mapper
      * @param array $arr_results
      * @return Entity[]|null
      */
-    public function mapFromResults(array $arr_results)
+    public function mapFromResults($arr_results)
     {
         $arr_entities = [];
         foreach ($arr_results as $obj_result) {
