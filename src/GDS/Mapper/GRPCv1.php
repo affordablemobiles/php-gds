@@ -248,7 +248,7 @@ class GRPCv1 extends \GDS\Mapper
                 } else {
                     $obj_dtm = new \DateTimeImmutable($mix_value);
                 }
-                $timestamp = new Timestamp()->setSeconds($obj_dtm->getTimestamp())->setNanos(1000 * $obj_dtm->format('u'));
+                $timestamp = (new Timestamp())->setSeconds($obj_dtm->getTimestamp())->setNanos(1000 * $obj_dtm->format('u'));
                 $obj_val->setTimestampValue($timestamp);
                 break;
 
@@ -262,7 +262,7 @@ class GRPCv1 extends \GDS\Mapper
                 break;
 
             case Schema::PROPERTY_GEOPOINT:
-                $geo = new LatLng()->setLatitude($mix_value[0])->setLongitude($mix_value[1]);
+                $geo = (new LatLng())->setLatitude($mix_value[0])->setLongitude($mix_value[1]);
                 $obj_val->setGeoPointValue($geo);
                 break;
 
@@ -270,7 +270,7 @@ class GRPCv1 extends \GDS\Mapper
                 $obj_val->setExcludeFromIndexes(false); // Ensure we only index the values, not the list
                 $vals = [];
                 foreach ((array)$mix_value as $str) {
-                    $vals[] = new Value()->setStringValue($str)->setExcludeFromIndexes(!$bol_index);
+                    $vals[] = (new Value())->setStringValue($str)->setExcludeFromIndexes(!$bol_index);
                 }
                 $obj_val->setArrayValue($vals);
                 break;

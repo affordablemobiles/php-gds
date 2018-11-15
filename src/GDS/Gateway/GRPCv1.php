@@ -206,7 +206,7 @@ class GRPCv1 extends \GDS\Gateway
 
         foreach($arr_entities as $obj_gds_entity) {
             $obj_key = $obj_mapper->createGoogleKey($obj_gds_entity);
-            $mutations[] = new Mutation()->setDelete($obj_key);
+            $mutations[] = (new Mutation())->setDelete($obj_key);
         }
 
         $options = [];
@@ -234,7 +234,7 @@ class GRPCv1 extends \GDS\Gateway
     {
         $readOptions = $this->getReadOptions();
 
-        $obj_gql_query = new GqlQuery()->setAllowLiterals(true)->setQueryString($str_gql);
+        $obj_gql_query = (new GqlQuery())->setAllowLiterals(true)->setQueryString($str_gql);
 
         if(null !== $arr_params) {
             $this->addParamsToQuery($obj_gql_query, $arr_params);
@@ -350,12 +350,12 @@ class GRPCv1 extends \GDS\Gateway
     {
         if($mix_value instanceof Entity) {
             $obj_key = $this->createMapper()->createGoogleKey($mix_value);
-            return new Value()->setKeyValue($obj_key);
+            return (new Value())->setKeyValue($obj_key);
         } elseif ($mix_value instanceof \DateTimeInterface) {
-            $timestamp = new Timestamp()->setSeconds($mix_value->getTimestamp())->setNanos(1000 * $mix_value->format('u'));
-            return new Value()->setTimestampValue($timestamp);
+            $timestamp = (new Timestamp())->setSeconds($mix_value->getTimestamp())->setNanos(1000 * $mix_value->format('u'));
+            return (new Value())->setTimestampValue($timestamp);
         } elseif (method_exists($mix_value, '__toString')) {
-            return new Value()->setStringValue($mix_value->__toString());
+            return (new Value())->setStringValue($mix_value->__toString());
         } else {
             throw new \InvalidArgumentException('Unexpected, non-string-able object parameter: ' . get_class($mix_value));
         }
