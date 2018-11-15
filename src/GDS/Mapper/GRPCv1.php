@@ -91,9 +91,9 @@ class GRPCv1 extends \GDS\Mapper
         foreach($obj_result->getEntity()->getProperties() as $str_field => $obj_property) {
             /* string => Google\Cloud\Datastore\V1\Value */
             if ($bol_schema_match && isset($arr_property_definitions[$str_field])) {
-                $obj_gds_entity->__set($str_field, $this->extractPropertyValue($arr_property_definitions[$str_field]['type'], $obj_property->getValue()));
+                $obj_gds_entity->__set($str_field, $this->extractPropertyValue($arr_property_definitions[$str_field]['type'], $obj_property));
             } else {
-                $obj_gds_entity->__set($str_field, $this->extractPropertyValue(Schema::PROPERTY_DETECT, $obj_property->getValue()));
+                $obj_gds_entity->__set($str_field, $this->extractPropertyValue(Schema::PROPERTY_DETECT, $obj_property));
             }
         }
         return $obj_gds_entity;
