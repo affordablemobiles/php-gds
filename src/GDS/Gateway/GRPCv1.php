@@ -87,6 +87,7 @@ class GRPCv1 extends \GDS\Gateway
         $obj = new PartitionId();
         $obj->setProjectId($this->str_dataset_id);
         $obj->setNamespaceId($this->str_namespace);
+        return $obj;
     }
 
     /**
@@ -171,7 +172,7 @@ class GRPCv1 extends \GDS\Gateway
             }
             $obj_entity = new GRPC_Entity();
             $this->determineMapper($obj_gds_entity)->mapToGoogle($obj_gds_entity, $obj_entity);
-            $mutations[] = new Mutation()->setUpsert($obj_entity);
+            $mutations[] = (new Mutation())->setUpsert($obj_entity);
         }
 
         $options = [];
