@@ -50,10 +50,11 @@ class GRPCv1 extends \GDS\Gateway
     /**
      * gRPC Client
      */
-    private $grpc_client;
+    protected static $grpc_client;
 
     /**
-     * Set up the dataset and optional namespace
+     * Set up the dataset and optional namespace,
+     * plus the gRPC client.
      *
      * @param null|string $str_dataset
      * @param null|string $str_namespace
@@ -72,13 +73,16 @@ class GRPCv1 extends \GDS\Gateway
         }
         $this->str_namespace = $str_namespace;
 
-        $this->grpc_client = new DatastoreClient();
+        if (!(self::$grpc_client instanceof \Google\Cloud\Datastore\V1\DatastoreClient))
+        {
+            self::$grpc_client = new DatastoreClient();
+        }
     }
 
     /**
-     * Apply dataset and namespace ("partition") to an object
+     * Get dataset and namespace ("partition") object
      *
-     * Usually a Key or RunQueryRequest
+     * Usually applied to a Key or RunQueryRequest
      *
      * @param object $obj_target
      * @return mixed
@@ -94,8 +98,7 @@ class GRPCv1 extends \GDS\Gateway
     }
 
     /**
-     * Execute a method against the Datastore
-
+     * Execute a method against the Datastore client.
      *
      * @param $str_method
      * @param mixed[] $args
@@ -109,7 +112,7 @@ class GRPCv1 extends \GDS\Gateway
             // Call gRPC client,
             //   prepend projectId as first parameter automatically.
             array_unshift($args, $this->str_dataset_id);
-            $this->obj_last_response = call_user_func_array([$this->grpc_client, $str_method], $args);
+            $this->obj_last_response = call_user_func_array([self::$grpc_client, $str_method], $args);
         } catch (ApiException $obj_exception) {
             $this->obj_last_response = null;
             if (FALSE !== strpos($obj_exception->getMessage(), 'too much contention') || FALSE !== strpos($obj_exception->getMessage(), 'Concurrency')) {
@@ -123,6 +126,13 @@ class GRPCv1 extends \GDS\Gateway
         return $this->obj_last_response;
     }
 
+    /**
+     * Convert a RepeatedField to a standard array,
+     * as it isn't compatible with the usual array functions.
+     *
+     * @param RepeatedField $rep
+     * @return array
+     */
     public function convertRepeatedField(RepeatedField $rep)
     {
         $arr = [];
@@ -305,7 +315,7 @@ class GRPCv1 extends \GDS\Gateway
     }
 
     /**
-     * Apply a transaction to an object
+     * Get the transaction to apply to an object
      *
      * @return mixed
      */
@@ -317,7 +327,7 @@ class GRPCv1 extends \GDS\Gateway
     }
 
     /**
-     * Apply a transaction to an object
+     * Get a ReadOptions object, containing transaction info.
      *
      * @return mixed
      */
@@ -361,6 +371,7 @@ class GRPCv1 extends \GDS\Gateway
      *
      * @todo Re-use one Mapper instance
      *
+     * @param Value $obj_val
      * @param object $mix_value
      */
     protected function configureObjectValueParamForQuery($obj_val, $mix_value)
@@ -389,7 +400,7 @@ class GRPCv1 extends \GDS\Gateway
     /**
      * Create a mapper that's right for this Gateway
      *
-     * @return \GDS\Mapper\ProtoBuf
+     * @return \GDS\Mapper\GRPCv1
      */
     protected function createMapper()
     {

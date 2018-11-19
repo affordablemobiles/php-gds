@@ -39,8 +39,16 @@ use Google\Cloud\Datastore\V1\Value;
 class GRPCv1 extends \GDS\Mapper
 {
 
+    /**
+     * Project & Namespace Info for Keys
+     */
     private $partitionId;
 
+    /**
+     * Set the partition (project & namespace) object internally for key generation.
+     *
+     * @param Google\Cloud\Datastore\V1\PartitionId $var
+     */
     public function setPartitionId($var)
     {
         $this->partitionId = $var;
@@ -48,7 +56,7 @@ class GRPCv1 extends \GDS\Mapper
     }
 
     /**
-     * Map from GDS to Google Protocol Buffer
+     * Map from GDS to gRPC object.
      *
      * @param Entity $obj_gds_entity
      * @param Google\Cloud\Datastore\V1\Entity $obj_entity
@@ -99,6 +107,13 @@ class GRPCv1 extends \GDS\Mapper
         return $obj_gds_entity;
     }
 
+    /**
+     * Convert a RepeatedField to a standard array,
+     * as it isn't compatible with the usual array functions.
+     *
+     * @param RepeatedField $rep
+     * @return array
+     */
     public function convertRepeatedField(RepeatedField $rep)
     {
         $arr = [];
@@ -113,7 +128,7 @@ class GRPCv1 extends \GDS\Mapper
      *
      * @todo Validate dynamic mapping
      *
-     * @param EntityResult $obj_result
+     * @param GRPC_EntityResult $obj_result
      * @return array
      */
     private function createEntityWithKey(GRPC_EntityResult $obj_result)
@@ -158,7 +173,7 @@ class GRPCv1 extends \GDS\Mapper
     }
 
     /**
-     * Populate a ProtoBuf Key from a GDS Entity
+     * Return a gRPC Key from a GDS Entity
      *
      * @param Key $obj_key
      * @param Entity $obj_gds_entity
@@ -176,6 +191,13 @@ class GRPCv1 extends \GDS\Mapper
         return $obj_key;
     }
 
+    /**
+     * Recursively walk the Key hierarchy to return a fully mapped key.
+     *
+     * @param KeyPathElement[] $path
+     * @param Entity $obj_gds_entity
+     * @return KeyPathElement[]
+     */
     public function walkGoogleKeyPathElement($path, Entity $obj_gds_entity)
     {
         // Root Key (must be the first in the chain)
@@ -196,6 +218,13 @@ class GRPCv1 extends \GDS\Mapper
         return $path;
     }
 
+    /**
+     * Prepend KeyPathElement to key hierarchy array.
+     *
+     * @param KeyPathElement[] $arr
+     * @param Entity $obj_gds_entity
+     * @return KeyPathElement[]
+     */
     public function prependGoogleKeyPathElement($arr, Entity $obj_gds_entity)
     {
         $data = [
@@ -208,10 +237,10 @@ class GRPCv1 extends \GDS\Mapper
     }
 
     /**
-     * Configure a Google Key Path Element object
+     * Create a Google Key Path Element object
      *
-     * @param Key\PathElement $obj_path_element
      * @param array $arr_kpe
+     * @return KeyPathElement
      */
     private function createGoogleKeyPathElement(array $arr_kpe)
     {
@@ -225,11 +254,10 @@ class GRPCv1 extends \GDS\Mapper
     }
 
     /**
-     * Populate a ProtoBuf Property Value from a GDS Entity field definition & value
+     * Return a gRPC Property Value from a GDS Entity field definition & value
      *
      * @todo compare with Google API implementation
      *
-     * @param Value $obj_val
      * @param array $arr_field_def
      * @param $mix_value
      */
@@ -301,7 +329,7 @@ class GRPCv1 extends \GDS\Mapper
     /**
      * Extract a datetime value
      *
-     * @param object $obj_property
+     * @param Value $obj_property
      * @return mixed
      */
     protected function extractDatetimeValue($obj_property)
@@ -313,7 +341,7 @@ class GRPCv1 extends \GDS\Mapper
     /**
      * Extract a String List value
      *
-     * @param object $obj_property
+     * @param Value $obj_property
      * @return mixed
      */
     protected function extractStringListValue($obj_property)
@@ -333,7 +361,7 @@ class GRPCv1 extends \GDS\Mapper
     /**
      * Extract a Geopoint value (lat/lon pair)
      *
-     * @param \google\appengine\datastore\v4\Value $obj_property
+     * @param Value $obj_property
      * @return Geopoint
      */
     protected function extractGeopointValue($obj_property)
@@ -349,7 +377,7 @@ class GRPCv1 extends \GDS\Mapper
      *
      * @param $int_type
      * @param object $obj_property
-     * @return array
+     * @return mixed
      * @throws \Exception
      */
     protected function extractPropertyValue($int_type, $obj_property)
