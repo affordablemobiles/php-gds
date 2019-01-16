@@ -13,8 +13,7 @@
     ],
     "require": {
         "php": ">=5.5.0",
-        "ext-bcmath" : "*",
-        "google/datastore": "dev-master"
+        "ext-bcmath" : "*"
     },
     "require-dev": {
         "google/auth": "v1.0.*",
@@ -32,11 +31,5 @@
         ],
         "psr-4": {"GDS\\": "src/GDS/"}
     },
-    "include-path": ["src/"],
-    "repositories": [
-        {
-          "type": "git",
-          "url": "https://github.com/a1comms/datastore-grpc.git"
-        }
-    ]
+    "include-path": ["src/"]
 }
