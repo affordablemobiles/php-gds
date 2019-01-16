@@ -1,5 +1,5 @@
 {
-    "name": "tomwalder/php-gds",
+    "name": "a1comms/php-gds",
     "type": "library",
     "description": "Google Cloud Datastore Library for PHP",
     "keywords": ["google", "datastore", "appengine", "gae", "cloud datastore", "nosql"],
