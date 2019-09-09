@@ -205,14 +205,18 @@ class GRPCv1 extends \GDS\Mapper
 
         // Add any ancestors
         $mix_ancestry = $obj_gds_entity->getAncestry();
+        
         if(is_array($mix_ancestry)) {
-            // @todo Get direction right!
             foreach ($mix_ancestry as $arr_ancestor_element) {
-                $this->prependGoogleKeyPathElement($path, $arr_ancestor_element);
+                if ($arr_ancestor_element instanceof Entity) {
+                    $path = $this->prependGoogleKeyPathElement($path, $arr_ancestor_element);
+                } elseif (is_array($arr_ancestor_element)) {
+                    array_unshift($path, $this->createGoogleKeyPathElement($arr_ancestor_element));
+                }
             }
         } elseif ($mix_ancestry instanceof Entity) {
             // Recursive
-            $this->walkGoogleKeyPathElement($path, $mix_ancestry);
+            $path = $this->walkGoogleKeyPathElement($path, $mix_ancestry);
         }
 
         return $path;
