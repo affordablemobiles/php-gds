@@ -306,7 +306,9 @@ class GRPCv1 extends \GDS\Gateway
         foreach($this->obj_last_response->getMutationResults() as $obj_list) {
             $obj_key = $obj_list->getKey();
             if ($obj_key !== null) {
-                $arr_key_path = $obj_key->getPath();
+                $arr_key_path = $this->convertRepeatedField(
+                    $obj_key->getPath()
+                );
                 $obj_path_end = end($arr_key_path);
                 $arr_ids[] = $obj_path_end->getId();
             }
