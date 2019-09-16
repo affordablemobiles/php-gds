@@ -21,6 +21,7 @@ use GDS\Entity;
 use GDS\Property\Geopoint;
 use GDS\Schema;
 use Google\Type\LatLng;
+use Google\Protobuf\NullValue;
 use Google\Protobuf\Timestamp;
 use Google\Protobuf\Internal\RepeatedField;
 use Google\Cloud\Datastore\V1\Key;
@@ -277,15 +278,14 @@ class GRPCv1 extends \GDS\Mapper
 
         // null checks
         if(null === $mix_value) {
+            $obj_val->setNullValue(NullValue::NULL_VALUE);
             return $obj_val;
         }
 
         // Value
         switch ($arr_field_def['type']) {
             case Schema::PROPERTY_STRING:
-                if (!empty($mix_value)) {
-                    $obj_val->setStringValue((string)$mix_value);
-                }
+                $obj_val->setStringValue((string)$mix_value);
                 break;
 
             case Schema::PROPERTY_INTEGER:
