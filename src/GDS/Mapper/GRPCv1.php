@@ -283,7 +283,9 @@ class GRPCv1 extends \GDS\Mapper
         // Value
         switch ($arr_field_def['type']) {
             case Schema::PROPERTY_STRING:
-                $obj_val->setStringValue((string)$mix_value);
+                if (!empty($mix_value)) {
+                    $obj_val->setStringValue((string)$mix_value);
+                }
                 break;
 
             case Schema::PROPERTY_INTEGER:
