@@ -388,6 +388,10 @@ class GRPCv1 extends \GDS\Mapper
      */
     protected function extractPropertyValue($int_type, $obj_property)
     {
+        if ($obj_property->getValueType() === 'null_value') {
+            return null;
+        }
+
         switch ($int_type) {
             case Schema::PROPERTY_STRING:
                 return $obj_property->getStringValue();
