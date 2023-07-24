@@ -29,7 +29,7 @@ use Google\Cloud\Datastore\V1\Entity as GRPC_Entity;
 use Google\Cloud\Datastore\V1\Key;
 use Google\Cloud\Datastore\V1\Key\PathElement as KeyPathElement;
 use Google\Cloud\Datastore\V1\PartitionId;
-use Google\Cloud\Datastore\V1\CommitRequest_Mode;
+use Google\Cloud\Datastore\V1\CommitRequest\Mode as CommitRequest_Mode;
 use Google\Cloud\Datastore\V1\Mutation;
 use Google\Cloud\Datastore\V1\ReadOptions;
 use Google\Cloud\Datastore\V1\GqlQuery;
