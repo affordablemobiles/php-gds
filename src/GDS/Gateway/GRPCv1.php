@@ -24,12 +24,16 @@ use GDS\Mapper\ProtoBufGQLParser;
 use Google\ApiCore\ApiException;
 use Google\Protobuf\Timestamp;
 use Google\Protobuf\Internal\RepeatedField;
-use Google\Cloud\Datastore\V1\DatastoreClient;
+use Google\Cloud\Datastore\V1\Client\DatastoreClient;
+use Google\Cloud\Datastore\V1\CommitRequest;
+use Google\Cloud\Datastore\V1\LookupRequest;
+use Google\Cloud\Datastore\V1\RunQueryRequest;
+use Google\Cloud\Datastore\V1\BeginTransactionRequest;
 use Google\Cloud\Datastore\V1\Entity as GRPC_Entity;
 use Google\Cloud\Datastore\V1\Key;
 use Google\Cloud\Datastore\V1\Key\PathElement as KeyPathElement;
 use Google\Cloud\Datastore\V1\PartitionId;
-use Google\Cloud\Datastore\V1\CommitRequest\Mode as CommitRequest_Mode;
+use Google\Cloud\Datastore\V1\CommitRequest\Mode;
 use Google\Cloud\Datastore\V1\Mutation;
 use Google\Cloud\Datastore\V1\ReadOptions;
 use Google\Cloud\Datastore\V1\GqlQuery;
@@ -110,9 +114,7 @@ class GRPCv1 extends \GDS\Gateway
     {
         try {
             // Call gRPC client,
-            //   prepend projectId as first parameter automatically.
-            array_unshift($args, $this->str_dataset_id);
-            $this->obj_last_response = call_user_func_array([self::$grpc_client, $str_method], $args);
+            $this->obj_last_response = self::$grpc_client->$str_method(...$args);
         } catch (ApiException $obj_exception) {
             $this->obj_last_response = null;
             if (FALSE !== strpos($obj_exception->getMessage(), 'too much contention') || FALSE !== strpos($obj_exception->getMessage(), 'Concurrency')) {
@@ -167,7 +169,14 @@ class GRPCv1 extends \GDS\Gateway
             $keys[] = $obj_key;
         }
 
-        $response = $this->execute('lookup', [$keys, ['readOptions' => $this->getReadOptions()]]);
+        $obj_request = new LookupRequest();
+        $obj_request->setProjectId($this->str_dataset_id);
+        $obj_request->setKeys($keys);
+        if($readOptions = $this->getReadOptions()) {
+            $obj_request->setReadOptions($readOptions);
+        }
+
+        $response = $this->execute('lookup', [$obj_request]);
 
         $results = $response->getFound();
         $arr_mapped_results = $this->createMapper()->mapFromResults($this->convertRepeatedField($results));
@@ -199,15 +208,17 @@ class GRPCv1 extends \GDS\Gateway
             $mutations[] = (new Mutation())->setUpsert($obj_entity);
         }
 
-        $options = [];
+        $obj_request = new CommitRequest();
+        $obj_request->setProjectId($this->str_dataset_id);
+        $obj_request->setMutations($mutations);
         if(null === $this->str_next_transaction) {
-            $mode = CommitRequest_Mode::NON_TRANSACTIONAL;
+            $obj_request->setMode(Mode::NON_TRANSACTIONAL);
         } else {
-            $mode = CommitRequest_Mode::TRANSACTIONAL;
-            $options['transaction'] = $this->getTransaction();
+            $obj_request->setMode(Mode::TRANSACTIONAL);
+            $obj_request->setTransaction($this->getTransaction());
         }
 
-        $this->execute('commit', [$mode, $mutations, $options]);
+        $this->execute('commit', [$obj_request]);
 
         return $arr_auto_id_required;
     }
@@ -233,15 +244,18 @@ class GRPCv1 extends \GDS\Gateway
             $mutations[] = (new Mutation())->setDelete($obj_key);
         }
 
-        $options = [];
+        $obj_request = new CommitRequest();
+        $obj_request->setProjectId($this->str_dataset_id);
+        $obj_request->setMutations($mutations);
         if(null === $this->str_next_transaction) {
-            $mode = CommitRequest_Mode::NON_TRANSACTIONAL;
+            $obj_request->setMode(Mode::NON_TRANSACTIONAL);
         } else {
-            $mode = CommitRequest_Mode::TRANSACTIONAL;
-            $options['transaction'] = $this->getTransaction();
+            $obj_request->setMode(Mode::TRANSACTIONAL);
+            $obj_request->setTransaction($this->getTransaction());
         }
 
-        $this->execute('commit', [$mode, $mutations, $options]);
+        $this->execute('commit', [$obj_request]);
+
         $this->obj_schema = null;
         return TRUE; // really?
     }
@@ -264,12 +278,15 @@ class GRPCv1 extends \GDS\Gateway
             $this->addParamsToQuery($obj_gql_query, $arr_params);
         }
 
-        $obj_gql_response = $this->execute('runQuery', [
-            $this->getPartitionId(), [
-                'readOptions' => $readOptions,
-                'gqlQuery' => $obj_gql_query
-            ]
-        ]);
+        $obj_request = new RunQueryRequest();
+        $obj_request->setProjectId($this->str_dataset_id);
+        $obj_request->setPartitionId($this->getPartitionId());
+        $obj_request->setGqlQuery($obj_gql_query);
+        if($readOptions = $this->getReadOptions()) {
+            $obj_request->setReadOptions($readOptions);
+        }
+
+        $obj_gql_response = $this->execute('runQuery', [$obj_request]);
 
         $results = $obj_gql_response->getBatch()->getEntityResults();
         $arr_mapped_results = $this->createMapper()->mapFromResults($this->convertRepeatedField($results));
@@ -291,7 +308,11 @@ class GRPCv1 extends \GDS\Gateway
             // No longer supported??
             // $obj_request->setCrossGroup(TRUE);
         }
-        $obj_response = $this->execute('beginTransaction', []);
+
+        $obj_request = new BeginTransactionRequest();
+        $obj_request->setProjectId($this->str_dataset_id);
+        $obj_response = $this->execute('beginTransaction', [$obj_request]);
+
         return $obj_response->getTransaction();
     }
 
